@@ -77,7 +77,7 @@ def process_message(message_body, message_attributes):
         message = f"""
         Hola, soy el bot de ABC-CALL
         
-        Tu incident:
+        Tu incidente fue registrado con la siguiente informacion:
         id: {incident_id}, 
         descripcion: {description}
         
