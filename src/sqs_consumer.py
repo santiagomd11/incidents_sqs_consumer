@@ -3,17 +3,19 @@ import boto3
 import logging
 import requests
 import json
+from email_client import send_email
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
-
 
 def ensure_envvars():
     """Ensure that these environment variables are provided at runtime"""
     required_envvars = [
         "AWS_REGION",
         "SQSCONSUMER_QUEUENAME",
-        "URL_BASE_INCIDENTS"
+        "URL_BASE_INCIDENTS",
+        "GMAIL_USER",
+        "GMAIL_PASSWORD"
     ]
 
     missing_envvars = []
@@ -25,7 +27,6 @@ def ensure_envvars():
         message = "Required environment variables are missing: " + \
             repr(missing_envvars)
         raise AssertionError(message)
-
 
 def process_message(message_body, message_attributes):
     logger.info(f"Processing message: {message_body}")
@@ -65,8 +66,40 @@ def process_message(message_body, message_attributes):
         return None
 
     logger.info(f"Response: {response.text}, status: {response.status_code}")
-    return response
 
+    if response.ok:  # This checks for any 2xx status code
+        response_data = response.json()
+        incident_id = response_data.get('id', 'N/A')
+        description = response_data.get('description', 'N/A')
+        to_email = response_data.get('userEmail', 'N/A')
+        
+        subject = "do not reply abc-call"
+        message = f"""
+        Hola, soy el bot de ABC-CALL
+        
+        Tu incident:
+        id: {incident_id}, 
+        descripcion: {description}
+        
+        Gracias por elegir nuestros servicios!
+        """
+    else:
+        # Handle unsuccessful response
+        subject = "do not reply abc-call"
+        to_email = payload.get('userEmail', 'N/A')  # Fallback to user's email in the original payload
+        message = """
+        Hola, soy el bot de ABC-CALL
+
+        Tu incidente no pudo ser registrado, vuelve a intentarlo desde nuestra pagina de registro. Agradecemos tu comprension.
+
+        Gracias por elegir nuestros servicios!
+        """
+
+    if to_email != 'N/A':
+        # Send email via Gmail SMTP
+        send_email(to_email, subject, message.strip())
+
+    return response
 
 def main():
     logger.info("SQS Consumer starting ...")
@@ -96,7 +129,6 @@ def main():
                 continue
 
             message.delete()
-
 
 if __name__ == "__main__":
     main()
