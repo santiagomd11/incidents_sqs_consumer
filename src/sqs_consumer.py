@@ -2,6 +2,7 @@ import os
 import boto3
 import logging
 import requests
+import json
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -47,14 +48,21 @@ def process_message(message_body, message_attributes):
         logger.error("URL was not defined, skipping message")
         return None
 
-    payload = message_body
+    payload = json.loads(message_body)
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
 
     if method == 'post':
-        response = requests.post(url, payload)
+        response = requests.post(url, json=payload, headers=headers)
     elif method == 'delete':
-        response = requests.delete(url, payload)
+        response = requests.delete(url, json=payload, headers=headers)
     elif method == 'put':
-        response = requests.put(url, payload)
+        response = requests.put(url, json=payload, headers=headers)
+    else:
+        logger.error(f"Unhandled method: {method}")
+        return None
 
     logger.info(f"Response: {response.text}, status: {response.status_code}")
     return response
