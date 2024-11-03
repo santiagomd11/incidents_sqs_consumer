@@ -67,7 +67,7 @@ def process_message(message_body, message_attributes):
 
     logger.info(f"Response: {response.text}, status: {response.status_code}")
 
-    if response.ok:  # This checks for any 2xx status code
+    if response.status_code == 201:  # This checks for any 2xx status code
         response_data = response.json()
         incident_id = response_data.get('id', 'N/A')
         description = response_data.get('description', 'N/A')
