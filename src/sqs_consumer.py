@@ -35,13 +35,11 @@ def process_message(message_body, message_attributes):
 
     if message_attributes is not None:
         event: str = message_attributes.get('event').get('StringValue').lower()
-        url_origin = message_attributes.get('url_origin').get('StringValue')
+        url = message_attributes.get('url_origin').get('StringValue')
         method: str = message_attributes.get('method').get('StringValue').lower()
 
         # Call incident API
-        if event in ['incident', 'incidents']:
-            url = os.environ["URL_BASE_INCIDENTS"]
-        else:
+        if event not in ['incident', 'incidents']:
             logger.error(f"Unhandled event type: {event}")
             return None
 
@@ -57,8 +55,6 @@ def process_message(message_body, message_attributes):
         response = requests.delete(url, payload)
     elif method == 'put':
         response = requests.put(url, payload)
-    else:
-        response = requests.get(url, params=payload)
 
     logger.info(f"Response: {response.text}, status: {response.status_code}")
     return response
